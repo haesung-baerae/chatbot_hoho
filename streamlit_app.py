@@ -27,16 +27,15 @@ else:
     # 💬 세션 상태 초기화
     if "messages" not in st.session_state:
         st.session_state.messages = []
-        # 첫 번째 환영 메시지 추가
         st.session_state.messages.append({
             "role": "assistant",
             "content": "안녕하세요, 저는 '오늘의 호호'예요 😊\n지금 마음은 어떤가요? 편하게 이야기해 주세요."
         })
 
     # 🪄 감정 이모지 추가 함수
-    def add_emoji(response):
+    def add_emoji(text):
         emojis = ["😊", "🌼", "🌈", "✨", "☕", "💖", "🍀"]
-        return response + " " + random.choice(emojis)
+        return text + " " + random.choice(emojis)
 
     # 💬 이전 메시지 표시
     for message in st.session_state.messages:
@@ -53,16 +52,16 @@ else:
     ]
     selected_prompt = random.choice(input_prompts)
 
-    # 💬 사용자 입력 받기
+    # 🗣️ 사용자 입력
     prompt = st.chat_input(selected_prompt)
 
     if prompt:
-        # 사용자 메시지 저장 및 출력
+        # 사용자 메시지 저장 및 표시
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # 🛠️ 시스템 프롬프트
+        # 💡 시스템 프롬프트
         system_prompt = """
         너는 '오늘의 호호'라는 이름의 챗봇이야.
         사람들의 고민을 따뜻하게 들어주고, 다정하고 친근한 말투로 공감과 위로를 건네주는 역할이야.
@@ -72,23 +71,30 @@ else:
         너의 목표는 사용자가 '호호~' 웃을 수 있도록 따뜻한 말을 전해주는 거야.
         """
 
-        # 🤖 OpenAI 응답 생성 (stream=False)
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
+        # 🤖 GPT-4o 모델 사용, 스트리밍 응답
+        stream = client.chat.completions.create(
+            model="gpt-4o",  # 💡 최신 모델 사용
             messages=[
                 {"role": "system", "content": system_prompt}
             ] + [
                 {"role": m["role"], "content": m["content"]}
                 for m in st.session_state.messages
             ],
-            stream=False,
+            stream=True,
         )
 
-        # 응답 내용 추출 + 이모지 추가
-        full_response = response.choices[0].message.content
-        response_with_emoji = add_emoji(full_response)
-
-        # 챗봇 응답 표시 및 저장
+        # 🪄 응답 스트리밍 처리 및 저장
+        full_response = ""
         with st.chat_message("assistant"):
-            st.markdown(response_with_emoji)
-        st.session_state.messages.append({"role": "assistant", "content": response_with_emoji})
+            for chunk in stream:
+                if chunk.choices[0].delta.content:
+                    full_response += chunk.choices[0].delta.content
+                    st.markdown(full_response + "▌")  # typing 효과
+
+        # 마지막 출력 (▌ 제거, 이모지 추가)
+        final_response = add_emoji(full_response.strip())
+        st.session_state.messages.append({"role": "assistant", "content": final_response})
+
+        # 결과 다시 출력
+        with st.chat_message("assistant"):
+            st.markdown(final_response)
