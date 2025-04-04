@@ -1,5 +1,15 @@
 import streamlit as st
 from openai import OpenAI
+import random
+
+input_prompts = [
+    "마음 속 이야기를 들려줄래요?",
+    "오늘 어떤 일이 있었나요?",
+    "속마음, 살짝 털어놔볼까요?",
+    "호호~ 하고 싶은 말이 있다면?",
+    "고민이나 마음속 말을 써보세요"
+]
+selected_prompt = random.choice(input_prompts)
 
 # Show title and description.
 st.title("💬 오늘의 호호")
@@ -44,8 +54,8 @@ else:
     """
     # Create a chat input field to allow the user to enter a message. This will display
     # automatically at the bottom of the page.
-    if prompt := st.chat_input("What is up?"):
-
+    if prompt := st.chat_input(selected_prompt):
+        
         # Store and display the current prompt.
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
