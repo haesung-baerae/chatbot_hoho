@@ -24,9 +24,10 @@ else:
     # 🧠 OpenAI Client 생성
     client = OpenAI(api_key=openai_api_key)
 
-    # 💬 세션 상태에 메시지 저장 (처음 입장 시)
+    # 💬 세션 상태 초기화
     if "messages" not in st.session_state:
         st.session_state.messages = []
+        # 첫 번째 환영 메시지 추가
         st.session_state.messages.append({
             "role": "assistant",
             "content": "안녕하세요, 저는 '오늘의 호호'예요 😊\n지금 마음은 어떤가요? 편하게 이야기해 주세요."
@@ -37,12 +38,12 @@ else:
         emojis = ["😊", "🌼", "🌈", "✨", "☕", "💖", "🍀"]
         return response + " " + random.choice(emojis)
 
-    # 🧾 이전 메시지 표시
+    # 💬 이전 메시지 표시
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
-    # 🎲 입력창 문구 랜덤 설정
+    # 🎲 랜덤 입력 프롬프트
     input_prompts = [
         "마음 속 이야기를 들려줄래요?",
         "오늘 어떤 일이 있었나요?",
@@ -53,12 +54,15 @@ else:
     selected_prompt = random.choice(input_prompts)
 
     # 💬 사용자 입력 받기
-    if prompt := st.chat_input(selected_prompt):
+    prompt = st.chat_input(selected_prompt)
+
+    if prompt:
+        # 사용자 메시지 저장 및 출력
         st.session_state.messages.append({"role": "user", "content": prompt})
         with st.chat_message("user"):
             st.markdown(prompt)
 
-        # 🛠️ 시스템 프롬프트 (챗봇 성격 설정)
+        # 🛠️ 시스템 프롬프트
         system_prompt = """
         너는 '오늘의 호호'라는 이름의 챗봇이야.
         사람들의 고민을 따뜻하게 들어주고, 다정하고 친근한 말투로 공감과 위로를 건네주는 역할이야.
@@ -68,23 +72,23 @@ else:
         너의 목표는 사용자가 '호호~' 웃을 수 있도록 따뜻한 말을 전해주는 거야.
         """
 
-        # 🤖 OpenAI API 응답 생성
+        # 🤖 OpenAI 응답 생성 (stream=False)
         response = client.chat.completions.create(
-        model="gpt-3.5-turbo",
-        messages=[
-            {"role": "system", "content": system_prompt}
-        ] + [
-            {"role": m["role"], "content": m["content"]}
-            for m in st.session_state.messages
-        ],
-        stream=False,  # ❗ 스트리밍 비활성화
+            model="gpt-3.5-turbo",
+            messages=[
+                {"role": "system", "content": system_prompt}
+            ] + [
+                {"role": m["role"], "content": m["content"]}
+                for m in st.session_state.messages
+            ],
+            stream=False,
         )
-        
-        # 응답 내용 추출 및 이모지 추가
+
+        # 응답 내용 추출 + 이모지 추가
         full_response = response.choices[0].message.content
         response_with_emoji = add_emoji(full_response)
-        
-        # 화면 출력 및 저장
+
+        # 챗봇 응답 표시 및 저장
         with st.chat_message("assistant"):
             st.markdown(response_with_emoji)
         st.session_state.messages.append({"role": "assistant", "content": response_with_emoji})
