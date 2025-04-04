@@ -69,19 +69,22 @@ else:
         """
 
         # 🤖 OpenAI API 응답 생성
-        stream = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt}
-            ] + [
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
-            ],
-            stream=True,
+        response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": system_prompt}
+        ] + [
+            {"role": m["role"], "content": m["content"]}
+            for m in st.session_state.messages
+        ],
+        stream=False,  # ❗ 스트리밍 비활성화
         )
-
-        # 📣 응답 스트리밍 및 저장
+        
+        # 응답 내용 추출 및 이모지 추가
+        full_response = response.choices[0].message.content
+        response_with_emoji = add_emoji(full_response)
+        
+        # 화면 출력 및 저장
         with st.chat_message("assistant"):
-            response = st.write_stream(stream)
-            response_with_emoji = add_emoji(response)
+            st.markdown(response_with_emoji)
         st.session_state.messages.append({"role": "assistant", "content": response_with_emoji})
