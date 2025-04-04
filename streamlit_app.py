@@ -5,7 +5,7 @@ from openai import OpenAI
 st.title("💬 오늘의 호호")
 st.write(
 """
-지친 마음을 살짝 어루만져 주고,
+지친 마음을 살짝 어루만져 주고,\n
 하루에 한 번, 따뜻한 말 한마디로
 당신을 ‘호호~’ 웃게 해주는 챗봇이에요.
 
@@ -34,6 +34,14 @@ else:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+    system_prompt = """
+    너는 '오늘의 호호'라는 이름의 챗봇이야.
+    사람들의 고민을 따뜻하게 들어주고, 다정하고 친근한 말투로 공감과 위로를 건네주는 역할이야.
+    또한, 힘이 필요한 사람에게는 부드럽게 동기부여를 해주고, 긍정적인 에너지를 전달해줘.
+    너의 말투는 마치 친한 친구처럼 다정하고, 부담 없이 편안한 느낌을 줘야 해.
+    딱딱하거나 차가운 말투는 절대 쓰지 말고, 조언이 필요할 땐 부드럽게 이끌어줘.
+    너의 목표는 사용자가 '호호~' 웃을 수 있도록 따뜻한 말을 전해주는 거야.
+    """
     # Create a chat input field to allow the user to enter a message. This will display
     # automatically at the bottom of the page.
     if prompt := st.chat_input("What is up?"):
@@ -47,8 +55,10 @@ else:
         stream = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[
-                {"role": m["role"], "content": m["content"]}
-                for m in st.session_state.messages
+                 {"role": "system", "content": system_prompt}
+                ] + [
+                    {"role": m["role"], "content": m["content"]}
+                    for m in st.session_state.messages
             ],
             stream=True,
         )
